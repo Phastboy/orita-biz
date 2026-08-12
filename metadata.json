@@ -1,0 +1,6 @@
+{
+  "name": "Oríta Biz",
+  "description": "Business management and analytics workspace for local businesses to manage their presence, offerings, and customer interactions.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
