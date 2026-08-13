@@ -1,42 +1,29 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
+import { BusinessService } from '../core/business.service';
 
 @Component({
   selector: 'app-biz-shell',
   standalone: true,
   imports: [RouterOutlet, RouterLink, RouterLinkActive, MatIconModule],
   template: `
-    <div class="min-h-screen bg-slate-50 flex flex-col md:flex-row font-sans text-slate-900">
-      <!-- Mobile header -->
-      <div class="md:hidden flex items-center justify-between bg-white border-b border-slate-200 p-4 sticky top-0 z-30">
-        <div class="flex items-center gap-2">
-          <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">O</div>
-          <span class="font-semibold text-lg tracking-tight">Oríta Biz</span>
-        </div>
-        <button (click)="mobileMenuOpen = !mobileMenuOpen" class="text-slate-500 hover:text-slate-900 focus:outline-none">
+    <div class="flex h-screen w-full bg-slate-50 font-sans overflow-hidden text-slate-900"> 
+      
+      <!-- Mobile sidebar toggle -->
+      <div class="md:hidden absolute top-4 right-4 z-50">
+        <button (click)="mobileMenuOpen = !mobileMenuOpen" class="bg-white p-2 rounded-lg shadow-sm border border-slate-200 text-slate-600 focus:outline-none">
           <mat-icon>{{ mobileMenuOpen ? 'close' : 'menu' }}</mat-icon>
         </button>
       </div>
 
-      <!-- Sidebar -->
-      <aside [class.hidden]="!mobileMenuOpen" class="md:flex flex-col w-full md:w-64 bg-white border-r border-slate-200 fixed md:sticky top-[65px] md:top-0 h-[calc(100vh-65px)] md:h-screen z-20 overflow-y-auto">
-        <div class="hidden md:flex items-center gap-2 p-6 pb-2">
-          <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">O</div>
-          <span class="font-semibold text-lg tracking-tight">Oríta Biz</span>
-        </div>
-        
-        <div class="p-6 md:p-6 pb-4">
-          <div class="flex items-center gap-3">
-            <img src="https://picsum.photos/seed/bizlogo/64/64" alt="Biz Logo" class="w-10 h-10 rounded-full border border-slate-200">
-            <div class="overflow-hidden">
-              <p class="font-medium text-sm truncate">Lakeside Cafe & Bakery</p>
-              <p class="text-xs text-slate-500 truncate">Food & Dining</p>
-            </div>
-          </div>
-        </div>
+      <aside [class.hidden]="!mobileMenuOpen && false" class="md:flex w-64 bg-white border-r border-slate-200 flex-col absolute md:relative z-40 h-full transition-transform" [class.-translate-x-full]="!mobileMenuOpen" [class.translate-x-0]="mobileMenuOpen" class="md:translate-x-0 w-64 bg-white border-r border-slate-200 flex flex-col h-full absolute md:relative z-40 transition-transform">
+        <div class="p-6 flex items-center gap-3">
+          <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">O</div> 
+          <span class="text-xl font-bold tracking-tight">Oríta Biz</span> 
+        </div> 
 
-        <nav class="flex-1 px-4 space-y-1 pb-8">
+        <nav class="flex-1 px-4 space-y-1 overflow-y-auto mt-4">
           @for (item of navItems; track item.path) {
             <a [routerLink]="item.path" 
                routerLinkActive="bg-indigo-50 text-indigo-700 font-medium"
@@ -52,27 +39,34 @@ import { MatIconModule } from '@angular/material/icon';
               {{ item.label }}
             </a>
           }
-        </nav>
-        
-        <div class="p-4 border-t border-slate-200 mt-auto">
+        </nav> 
+        <div class="p-4 border-t border-slate-200 mt-auto"> 
            <a routerLink="/settings"
                routerLinkActive="bg-indigo-50 text-indigo-700 font-medium"
                (click)="mobileMenuOpen = false"
-               class="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-slate-600 hover:bg-slate-50 transition-colors group">
+               class="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-slate-600 hover:bg-slate-50 transition-colors group mb-4">
               <mat-icon class="text-slate-400 group-hover:text-slate-600">settings</mat-icon>
               Settings
             </a>
-        </div>
-      </aside>
-
-      <!-- Main content -->
-      <main class="flex-1 min-w-0 overflow-y-auto">
+          <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-lg"> 
+            <div class="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden shrink-0 border border-slate-200"> 
+              <img [src]="bizSvc.currentBusiness().logo" class="w-full h-full object-cover"> 
+            </div> 
+            <div class="flex-1 min-w-0"> 
+              <p class="text-sm font-semibold truncate">{{ bizSvc.currentBusiness().name }}</p> 
+              <p class="text-xs text-slate-500 truncate">{{ bizSvc.currentBusiness().category }}</p> 
+            </div> 
+          </div> 
+        </div> 
+      </aside> 
+      <main class="flex-1 flex flex-col overflow-hidden relative"> 
         <router-outlet></router-outlet>
-      </main>
+      </main> 
     </div>
   `
 })
 export class BizShell {
+  bizSvc = inject(BusinessService);
   mobileMenuOpen = false;
   
   navItems = [
@@ -84,11 +78,7 @@ export class BizShell {
     { path: '/analytics', label: 'Analytics', icon: 'bar_chart', exact: false },
   ];
 
-  // A simple hacky check since RouterLinkActive on the icon doesn't easily work without viewchild, 
-  // but we can just let RouterLinkActive handle the main classes.
-  // Actually, standard RouterLinkActive works fine on the anchor.
   isRouteActive(path: string, exact: boolean) {
-    // In a real app we'd inject Router and check isActive
-    return false; // we'll rely on CSS cascade instead for the icon color if needed.
+    return false;
   }
 }

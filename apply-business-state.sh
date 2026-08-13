@@ -1,3 +1,72 @@
+#!/bin/bash
+set -e
+
+# 1. Update Types
+cat << 'TYPES' > src/app/core/types.ts
+export type ListingStatus = 'active' | 'draft' | 'archived';
+export type OpportunityStatus = 'active' | 'scheduled' | 'expired' | 'closed';
+export type MessageStatus = 'unread' | 'read' | 'replied';
+
+export interface Business {
+  id: string;
+  name: string;
+  description: string;
+  logo: string;
+  coverImage: string;
+  category: string;
+  email: string;
+  phone: string;
+  address: string;
+  openingHours: string;
+  serviceAreas: string[];
+}
+
+export interface Listing {
+  id: string;
+  businessId: string;
+  title: string;
+  description: string;
+  price: number;
+  status: ListingStatus;
+  availability: 'in-stock' | 'out-of-stock' | 'pre-order';
+  image: string;
+  category: string;
+  views: number;
+}
+
+export interface Opportunity {
+  id: string;
+  businessId: string;
+  title: string;
+  type: string;
+  description: string;
+  status: OpportunityStatus;
+  createdAt: string;
+  expiresAt: string;
+  interactions: number;
+}
+
+export interface Message {
+  id: string;
+  businessId: string;
+  senderName: string;
+  preview: string;
+  contextType: 'listing' | 'opportunity' | 'general';
+  contextTitle?: string;
+  status: MessageStatus;
+  timestamp: string;
+}
+
+export interface Metric {
+  businessId: string;
+  label: string;
+  value: string | number;
+  trend: number;
+}
+TYPES
+
+# 2. Update Mock Data
+cat << 'MOCK' > src/app/core/mock-data.ts
 import { Business, Listing, Opportunity, Message, Metric } from './types';
 
 export const MOCK_BUSINESSES: Business[] = [
@@ -69,3 +138,27 @@ export const MOCK_MESSAGES: Message[] = [
   { id: 'm4', businessId: 'b2', senderName: 'John (Maintenance)', preview: 'Is it too late to join the 4 PM campus delivery window? I need 2 packs of Garri.', contextType: 'opportunity', contextTitle: 'Same-Day OAU Campus Delivery (4 PM Window)', status: 'replied', timestamp: '2026-08-13T12:20:00Z' },
   { id: 'm5', businessId: 'b2', senderName: 'Kemi', preview: 'When will the blended pepper mix be back in stock?', contextType: 'listing', contextTitle: 'Fresh Pepper & Tomatoes Mix', status: 'read', timestamp: '2026-08-12T16:45:00Z' }
 ];
+MOCK
+
+# 3. Create Business Service
+cat << 'SERVICE' > src/app/core/business.service.ts
+import { Injectable, signal, computed } from '@angular/core';
+import { MOCK_BUSINESSES, MOCK_LISTINGS, MOCK_OPPORTUNITIES, MOCK_MESSAGES, MOCK_METRICS } from './mock-data';
+
+@Injectable({ providedIn: 'root' })
+export class BusinessService {
+  currentBusinessId = signal<string>('b2');
+
+  businesses = signal(MOCK_BUSINESSES);
+  
+  currentBusiness = computed(() => this.businesses().find(b => b.id === this.currentBusinessId())!);
+  metrics = computed(() => MOCK_METRICS.filter(m => m.businessId === this.currentBusinessId()));
+  listings = computed(() => MOCK_LISTINGS.filter(l => l.businessId === this.currentBusinessId()));
+  opportunities = computed(() => MOCK_OPPORTUNITIES.filter(o => o.businessId === this.currentBusinessId()));
+  messages = computed(() => MOCK_MESSAGES.filter(m => m.businessId === this.currentBusinessId()));
+
+  switchBusiness(id: string) {
+    this.currentBusinessId.set(id);
+  }
+}
+SERVICE

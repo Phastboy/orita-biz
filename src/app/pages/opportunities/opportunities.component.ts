@@ -1,78 +1,97 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
-import { StatusBadge } from '../../components/status-badge';
-import { EmptyState } from '../../components/empty-state';
-import { MOCK_OPPORTUNITIES } from '../../core/mock-data';
+import { BusinessService } from '../../core/business.service';
 
 @Component({
   selector: 'app-opportunities',
   standalone: true,
-  imports: [CommonModule, MatIconModule, StatusBadge, EmptyState],
+  host: { class: 'flex flex-col h-full w-full overflow-hidden' },
+  imports: [CommonModule, MatIconModule],
   template: `
-    <div class="p-6 max-w-5xl mx-auto space-y-6">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 class="text-xl font-bold text-slate-800">Opportunities</h1>
-          <p class="text-sm text-slate-500 mt-1">Post temporary needs, offers, or availability.</p>
+    <header class="h-16 border-b border-slate-200 bg-white flex items-center justify-between px-4 sm:px-8 shrink-0">
+      <h1 class="text-xl font-bold text-slate-800">Opportunities</h1>
+      <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors shadow-sm flex items-center gap-2">
+        <mat-icon class="text-sm h-4 w-4">add</mat-icon> Create Opportunity
+      </button>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-4 sm:p-8">
+      <div class="max-w-5xl mx-auto space-y-6">
+        <div class="bg-white p-1 rounded-lg border border-slate-200 shadow-sm inline-flex">
+           @for (t of tabs; track t.id) {
+             <button 
+               (click)="tab.set(t.id)"
+               [class.bg-slate-100]="tab() === t.id"
+               [class.text-slate-900]="tab() === t.id"
+               [class.font-medium]="tab() === t.id"
+               [class.shadow-sm]="tab() === t.id"
+               [class.text-slate-500]="tab() !== t.id"
+               class="px-4 py-1.5 rounded-md text-sm transition-all">
+               {{ t.label }}
+             </button>
+           }
         </div>
-        <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors shadow-sm flex items-center gap-2">
-          <mat-icon class="text-sm h-4 w-4">add</mat-icon> Create Opportunity
-        </button>
-      </div>
 
-      <div class="flex items-center gap-4 border-b border-slate-200">
-        <button (click)="tab.set('active')" [class.border-indigo-600]="tab() === 'active'" [class.text-indigo-600]="tab() === 'active'" [class.border-transparent]="tab() !== 'active'" [class.text-slate-500]="tab() !== 'active'" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm hover:text-slate-700 hover:border-slate-300">Active</button>
-        <button (click)="tab.set('scheduled')" [class.border-indigo-600]="tab() === 'scheduled'" [class.text-indigo-600]="tab() === 'scheduled'" [class.border-transparent]="tab() !== 'scheduled'" [class.text-slate-500]="tab() !== 'scheduled'" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm hover:text-slate-700 hover:border-slate-300">Scheduled</button>
-        <button (click)="tab.set('past')" [class.border-indigo-600]="tab() === 'past'" [class.text-indigo-600]="tab() === 'past'" [class.border-transparent]="tab() !== 'past'" [class.text-slate-500]="tab() !== 'past'" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm hover:text-slate-700 hover:border-slate-300">Past</button>
-      </div>
-
-      <div class="space-y-4">
-        @if (filteredOpps().length === 0) {
-          <app-empty-state 
-            title="No opportunities found" 
-            description="Create a temporary opportunity to connect with customers right now."
-            actionLabel="Create Opportunity"
-            actionIcon="add" />
-        } @else {
+        <div class="space-y-4">
           @for (opp of filteredOpps(); track opp.id) {
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between hover:border-indigo-200 transition-colors group">
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-3 mb-2">
-                  <app-status-badge [status]="opp.status" />
-                  <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">{{ opp.type }}</span>
-                </div>
-                <h3 class="text-lg font-semibold text-slate-900 mb-1 truncate">{{ opp.title }}</h3>
-                <p class="text-sm text-slate-600 line-clamp-2 max-w-2xl">{{ opp.description }}</p>
-                <div class="mt-4 flex items-center gap-4 text-xs text-slate-500">
-                  <span class="flex items-center gap-1"><mat-icon class="text-[16px] h-4 w-4">calendar_today</mat-icon> Created: {{ opp.createdAt | date:'shortDate' }}</span>
-                  <span class="flex items-center gap-1"><mat-icon class="text-[16px] h-4 w-4">schedule</mat-icon> Expires: {{ opp.expiresAt | date:'short' }}</span>
-                </div>
-              </div>
-              <div class="flex items-center gap-6 md:flex-col md:items-end w-full md:w-auto">
-                <div class="text-center md:text-right">
-                  <span class="block text-2xl font-semibold text-slate-900">{{ opp.interactions }}</span>
-                  <span class="text-xs text-slate-500 font-medium">Interactions</span>
-                </div>
-                <div class="flex gap-2 ml-auto md:ml-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Edit"><mat-icon>edit</mat-icon></button>
-                  <button class="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors" title="Close early"><mat-icon>stop_circle</mat-icon></button>
-                </div>
-              </div>
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col sm:flex-row gap-4 hover:border-indigo-300 transition-colors cursor-pointer group">
+               <div class="flex-1 min-w-0">
+                 <div class="flex items-center gap-2 mb-2">
+                   <span class="text-[10px] font-bold text-indigo-700 uppercase tracking-tight bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded">
+                     {{ opp.type }}
+                   </span>
+                   @if (opp.status === 'scheduled') {
+                     <span class="text-[10px] font-bold text-amber-700 uppercase tracking-tight bg-amber-50 border border-amber-100 px-2 py-0.5 rounded flex items-center gap-1">
+                       <mat-icon class="text-[10px] h-3 w-3">schedule</mat-icon> Scheduled
+                     </span>
+                   }
+                   <span class="text-[10px] text-slate-500 ml-auto">Expires: {{ opp.expiresAt | date:'medium' }}</span>
+                 </div>
+                 <h3 class="text-base font-bold text-slate-900 mb-1 group-hover:text-indigo-600 transition-colors">{{ opp.title }}</h3>
+                 <p class="text-sm text-slate-600 line-clamp-2 mb-3">{{ opp.description }}</p>
+                 
+                 <div class="flex items-center gap-4 text-xs font-medium text-slate-500">
+                   <span class="flex items-center gap-1"><mat-icon class="text-sm h-4 w-4 text-slate-400">forum</mat-icon> {{ opp.interactions }} responses</span>
+                   <span class="flex items-center gap-1"><mat-icon class="text-sm h-4 w-4 text-slate-400">calendar_today</mat-icon> Created {{ opp.createdAt | date:'shortDate' }}</span>
+                 </div>
+               </div>
+               
+               <div class="sm:border-l border-slate-100 sm:pl-4 flex sm:flex-col justify-end sm:justify-center gap-2">
+                 <button class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-transparent hover:border-indigo-100" title="Edit">
+                    <mat-icon class="text-sm h-5 w-5">edit</mat-icon>
+                 </button>
+                 <button class="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-transparent hover:border-rose-100" title="Close/Delete">
+                    <mat-icon class="text-sm h-5 w-5">delete_outline</mat-icon>
+                 </button>
+               </div>
             </div>
           }
-        }
+          @if (filteredOpps().length === 0) {
+            <div class="text-center py-12 text-slate-500 bg-white rounded-xl border border-dashed border-slate-300">
+               <mat-icon class="text-4xl text-slate-300 mb-2">campaign</mat-icon>
+               <h3 class="text-sm font-medium text-slate-900 mb-1">No opportunities found</h3>
+               <p class="text-xs">You don't have any opportunities in this tab.</p>
+            </div>
+          }
+        </div>
       </div>
     </div>
   `
 })
 export class OpportunitiesComponent {
-  opps = MOCK_OPPORTUNITIES;
+  bizSvc = inject(BusinessService);
+  
   tab = signal('active');
+  tabs = [
+    { id: 'active', label: 'Active' },
+    { id: 'scheduled', label: 'Scheduled' },
+    { id: 'past', label: 'Past / Closed' },
+  ];
 
-  filteredOpps() {
-    if (this.tab() === 'active') return this.opps.filter(o => o.status === 'active');
-    if (this.tab() === 'scheduled') return this.opps.filter(o => o.status === 'scheduled');
-    return this.opps.filter(o => o.status === 'expired' || o.status === 'closed');
-  }
+  filteredOpps = computed(() => {
+    if (this.tab() === 'active') return this.bizSvc.opportunities().filter(o => o.status === 'active');
+    if (this.tab() === 'scheduled') return this.bizSvc.opportunities().filter(o => o.status === 'scheduled');
+    return this.bizSvc.opportunities().filter(o => o.status === 'expired' || o.status === 'closed');
+  });
 }

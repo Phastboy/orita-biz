@@ -3,6 +3,7 @@ import { Component } from '@angular/core';
 @Component({
   selector: 'app-settings',
   standalone: true,
+  host: { class: 'flex flex-col h-full w-full overflow-y-auto' },
   template: `
     <div class="p-6 max-w-4xl mx-auto space-y-8">
       <div>

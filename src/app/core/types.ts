@@ -18,6 +18,7 @@ export interface Business {
 
 export interface Listing {
   id: string;
+  businessId: string;
   title: string;
   description: string;
   price: number;
@@ -30,6 +31,7 @@ export interface Listing {
 
 export interface Opportunity {
   id: string;
+  businessId: string;
   title: string;
   type: string;
   description: string;
@@ -41,6 +43,7 @@ export interface Opportunity {
 
 export interface Message {
   id: string;
+  businessId: string;
   senderName: string;
   preview: string;
   contextType: 'listing' | 'opportunity' | 'general';
@@ -50,6 +53,7 @@ export interface Message {
 }
 
 export interface Metric {
+  businessId: string;
   label: string;
   value: string | number;
   trend: number;
